@@ -1,0 +1,314 @@
+{
+  "name": "ScoutingAPI — STR market scan → Google Sheet dataset",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "str-market-scan-trigger",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "location",
+              "value": "Split, HR",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "adults",
+              "value": "2",
+              "type": "number"
+            },
+            {
+              "id": "assign-5",
+              "name": "platforms",
+              "value": "airbnb,vrbo,booking",
+              "type": "string"
+            },
+            {
+              "id": "assign-6",
+              "name": "limit",
+              "value": "20",
+              "type": "number"
+            },
+            {
+              "id": "assign-7",
+              "name": "topN",
+              "value": "10",
+              "type": "number"
+            },
+            {
+              "id": "assign-8",
+              "name": "sort",
+              "value": "price_asc",
+              "type": "string"
+            },
+            {
+              "id": "assign-9",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "str-market-scan-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "platforms",
+              "value": "={{ $json.platforms }}"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $json.limit }}"
+            },
+            {
+              "name": "sort",
+              "value": "={{ $json.sort }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "str-market-scan-step-0",
+      "name": "Search the market",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Pick the top N listings from the search fan-out to price precisely.\nconst inputs = $('Set Inputs').first().json;\nconst topN = Number(inputs.topN) > 0 ? Number(inputs.topN) : 10;\nconst rows = [];\nfor (const item of $input.all()) {\n  const data = Array.isArray(item.json.data) ? item.json.data : [];\n  for (const p of data) rows.push(p);\n}\nrows.sort((a, b) => (a.price?.totalPrice ?? Infinity) - (b.price?.totalPrice ?? Infinity));\nreturn rows.slice(0, topN).map((p) => ({\n  json: {\n    platform: p.platform,\n    listingId: p.platformListingId,\n    name: p.name ?? null,\n    url: p.url ?? null,\n    city: p.location?.city ?? null,\n    bedrooms: p.bedrooms ?? null,\n    maxOccupancy: p.maxOccupancy ?? null,\n    guestRating: p.guestRating ?? null,\n    ratingScale: p.ratingScale ?? null,\n    searchNightly: p.price?.nightlyPrice ?? null,\n    searchTotal: p.price?.totalPrice ?? null,\n    checkIn: inputs.checkIn ?? null,\n    checkOut: inputs.checkOut ?? null,\n    adults: inputs.adults ?? null,\n    currency: inputs.currency ?? p.price?.currency ?? 'USD',\n  },\n}));"
+      },
+      "id": "str-market-scan-step-1",
+      "name": "Pick top N to price",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/price",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $json.listingId }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "str-market-scan-step-2",
+      "name": "Price each candidate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// One normalized market-dataset row per priced listing.\nconst price = ($json && $json.data) || {};\nconst cand = $('Pick top N to price').item.json;\nconst nightly = price.nightlyPrice ?? cand.searchNightly ?? null;\nconst total = price.totalPrice ?? cand.searchTotal ?? null;\nconst currency = price.currency ?? cand.currency ?? 'USD';\nreturn {\n  json: {\n    name: cand.name,\n    platform: cand.platform,\n    listingId: cand.listingId,\n    city: cand.city,\n    bedrooms: cand.bedrooms,\n    maxOccupancy: cand.maxOccupancy,\n    guestRating: cand.guestRating,\n    ratingScale: cand.ratingScale,\n    nightlyPrice: nightly,\n    totalPrice: total,\n    currency,\n    url: cand.url,\n    checkIn: cand.checkIn,\n    checkOut: cand.checkOut,\n    report: `${cand.name ?? cand.listingId} (${cand.platform}): ${total ?? '?'} ${currency} · ${cand.url ?? ''}`,\n  },\n};"
+      },
+      "id": "str-market-scan-step-3",
+      "name": "Build market dataset",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "id": "str-market-scan-delivery",
+      "position": [
+        940,
+        0
+      ],
+      "parameters": {},
+      "name": "Deliver (sheet) — configure",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "Search the market",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search the market": {
+      "main": [
+        [
+          {
+            "node": "Pick top N to price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick top N to price": {
+      "main": [
+        [
+          {
+            "node": "Price each candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price each candidate": {
+      "main": [
+        [
+          {
+            "node": "Build market dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build market dataset": {
+      "main": [
+        [
+          {
+            "node": "Deliver (sheet) — configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-str-market-scan-v1",
+  "tags": []
+}

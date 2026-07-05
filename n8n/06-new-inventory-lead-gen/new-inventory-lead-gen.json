@@ -1,0 +1,210 @@
+{
+  "name": "ScoutingAPI — New-inventory monitor → CRM lead feed",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "new-inventory-lead-gen-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "location",
+              "value": "Split, HR",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "platforms",
+              "value": "airbnb,vrbo,booking",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "limit",
+              "value": "30",
+              "type": "number"
+            },
+            {
+              "id": "assign-6",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "new-inventory-lead-gen-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "platforms",
+              "value": "={{ $json.platforms }}"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $json.limit }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "new-inventory-lead-gen-http",
+      "name": "ScoutingAPI: Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Diff a /v1/search result against the previous run and emit only NEW listings.\n// State is persisted between runs in n8n's workflow static data.\nconst staticData = $getWorkflowStaticData('global');\nconst seen = new Set(staticData.seenListingIds || []);\nconst firstRun = seen.size === 0;\nconst out = [];\nfor (const item of $input.all()) {\n  const data = Array.isArray(item.json.data) ? item.json.data : [];\n  const meta = item.json.meta || {};\n  for (const p of data) {\n    const id = p.id || `${p.platform}:${p.platformListingId}`;\n    if (seen.has(id)) continue;\n    seen.add(id);\n    // Seed the baseline on the first run so we don't emit the whole market as \"new\".\n    if (firstRun) continue;\n    out.push({\n      json: {\n        leadId: id,\n        platform: p.platform ?? null,\n        name: p.name ?? null,\n        url: p.url ?? null,\n        propertyType: p.propertyType ?? null,\n        city: p.location?.city ?? null,\n        bedrooms: p.bedrooms ?? null,\n        maxOccupancy: p.maxOccupancy ?? null,\n        guestRating: p.guestRating ?? null,\n        ratingScale: p.ratingScale ?? null,\n        nightlyPrice: p.price?.nightlyPrice ?? null,\n        totalPrice: p.price?.totalPrice ?? null,\n        currency: p.price?.currency ?? meta.currency ?? 'USD',\n        firstSeenRequestId: meta.requestId ?? null,\n        report: `New listing: ${p.name ?? id} (${p.platform}) — ${p.url ?? ''}`,\n      },\n    });\n  }\n}\nstaticData.seenListingIds = Array.from(seen);\nreturn out;"
+      },
+      "id": "new-inventory-lead-gen-code",
+      "name": "Diff New Listings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "id": "new-inventory-lead-gen-delivery",
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {},
+      "name": "Deliver (sheet) — configure",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "ScoutingAPI: Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ScoutingAPI: Request": {
+      "main": [
+        [
+          {
+            "node": "Diff New Listings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Diff New Listings": {
+      "main": [
+        [
+          {
+            "node": "Deliver (sheet) — configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-new-inventory-lead-gen-v1",
+  "tags": []
+}

@@ -1,0 +1,307 @@
+{
+  "name": "ScoutingAPI — Competitor rate & availability benchmark",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "comp-set-benchmark-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "platform",
+              "value": "booking",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "listingIds",
+              "value": "abramovic2,amadria-park,hotel-x",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "yourListingId",
+              "value": "abramovic2",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-6",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "comp-set-benchmark-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Split the comp-set (Set Inputs.listingIds) into one item per listing.\nconst cfg = $('Set Inputs').first().json;\nconst ids = String(cfg.listingIds || '')\n  .split(',')\n  .map((s) => s.trim())\n  .filter(Boolean);\nreturn ids.map((listingId) => ({\n  json: {\n    platform: cfg.platform,\n    listingId,\n    checkIn: cfg.checkIn,\n    checkOut: cfg.checkOut,\n    currency: cfg.currency || 'USD',\n  },\n}));"
+      },
+      "id": "comp-set-benchmark-step-0",
+      "name": "Fan out comp-set",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/price",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $json.listingId }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "comp-set-benchmark-step-1",
+      "name": "Price per listing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/availability",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $('Set Inputs').first().json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $json.data.listingId }}"
+            },
+            {
+              "name": "startDate",
+              "value": "={{ $('Set Inputs').first().json.checkIn }}"
+            },
+            {
+              "name": "endDate",
+              "value": "={{ $('Set Inputs').first().json.checkOut }}"
+            },
+            {
+              "name": "onlyAvailable",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "comp-set-benchmark-step-2",
+      "name": "Availability per listing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Comp-set benchmark: rank rates + occupancy density. Number-free (credits summed live).\nconst cfg = $('Set Inputs').first().json;\nconst yourId = String(cfg.yourListingId || '').trim();\nlet credits = 0;\nconst prices = {};\nfor (const item of $('Price per listing').all()) {\n  const d = item.json.data || {};\n  const m = item.json.meta || {};\n  credits += m.creditsCharged || 0;\n  if (d.listingId != null) {\n    prices[String(d.listingId)] = {\n      total: typeof d.totalPrice === 'number' ? d.totalPrice : null,\n      currency: d.currency || cfg.currency || 'USD',\n      url: d.url || null,\n    };\n  }\n}\nconst bookable = {};\nfor (const item of $input.all()) {\n  const rows = Array.isArray(item.json.data) ? item.json.data : [];\n  const m = item.json.meta || {};\n  credits += m.creditsCharged || 0;\n  for (const row of rows) {\n    const days = (row.dates || []).filter((x) => x.available && x.bookable !== false).length;\n    bookable[String(row.listingId)] = days;\n  }\n}\nconst rows = Object.keys(prices).map((id) => ({\n  listingId: id,\n  total: prices[id].total,\n  currency: prices[id].currency,\n  url: prices[id].url,\n  bookableDays: bookable[id] ?? null,\n  isYours: id === yourId,\n}));\nconst priced = rows.filter((r) => typeof r.total === 'number').sort((a, b) => a.total - b.total);\nconst rankIdx = priced.findIndex((r) => r.isYours);\nconst yours = rankIdx >= 0 ? priced[rankIdx] : null;\nconst cheapest = priced[0] || null;\nconst median = priced.length ? priced[Math.floor((priced.length - 1) / 2)].total : null;\nconst lines = priced.map(\n  (r, i) =>\n    `${i + 1}. ${r.isYours ? '> ' : '  '}${r.listingId}: ${r.total} ${r.currency}` +\n    (r.bookableDays != null ? ` · ${r.bookableDays} bookable days` : ''),\n);\nconst report =\n  `Comp-set benchmark (${priced.length} priced listings)\\n` +\n  `Stay ${cfg.checkIn} -> ${cfg.checkOut}\\n\\n` +\n  (yours\n    ? `Your rate: ${yours.total} ${yours.currency} — rank ${rankIdx + 1}/${priced.length}` +\n      (cheapest ? ` (cheapest ${cheapest.total}, median ${median})\\n\\n` : '\\n\\n')\n    : '') +\n  `Ranked low->high:\\n${lines.join('\\n')}\\n\\n` +\n  `Credits charged: ${credits} · requestId ${$('Price per listing').first()?.json?.meta?.requestId ?? ''}`;\nreturn [{ json: { rank: yours ? rankIdx + 1 : null, yours, cheapest, median, listings: priced, report } }];"
+      },
+      "id": "comp-set-benchmark-step-3",
+      "name": "Build benchmark",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "id": "comp-set-benchmark-delivery",
+      "position": [
+        940,
+        0
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "={{ $json.report }}",
+        "otherOptions": {}
+      },
+      "name": "Send Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "Fan out comp-set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fan out comp-set": {
+      "main": [
+        [
+          {
+            "node": "Price per listing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price per listing": {
+      "main": [
+        [
+          {
+            "node": "Availability per listing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Availability per listing": {
+      "main": [
+        [
+          {
+            "node": "Build benchmark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build benchmark": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-comp-set-benchmark-v1",
+  "tags": []
+}

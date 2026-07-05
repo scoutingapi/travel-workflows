@@ -1,0 +1,201 @@
+{
+  "name": "ScoutingAPI — Booking-ready cheapest-link resolver",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "cheapest-link-resolver-trigger",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "name",
+              "value": "Hotel X Sibenik",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "location",
+              "value": "Sibenik, HR",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "adults",
+              "value": "2",
+              "type": "number"
+            },
+            {
+              "id": "assign-6",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cheapest-link-resolver-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cheapest-link-resolver-http",
+      "name": "ScoutingAPI: Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Resolve the single cheapest BOOKABLE link from a /v1/price-compare response.\n// Input item: { data: PriceCompare, meta: SuccessMeta }.\nconst out = [];\nfor (const item of $input.all()) {\n  const data = item.json.data || {};\n  const meta = item.json.meta || {};\n  const currency = data.currency || meta.currency || 'USD';\n  const offers = (Array.isArray(data.offers) ? [...data.offers] : [])\n    .filter((o) => o && o.url && typeof o.totalPrice === 'number')\n    .sort((a, b) => a.totalPrice - b.totalPrice);\n  const best = offers[0] || null;\n  const savingsVsMedian =\n    best && typeof data.median === 'number'\n      ? Math.max(0, Math.round((data.median - best.totalPrice) * 100) / 100)\n      : null;\n  out.push({\n    json: best\n      ? {\n          property: data.property ?? null,\n          checkIn: data.checkIn ?? null,\n          checkOut: data.checkOut ?? null,\n          ota: best.ota,\n          totalPrice: best.totalPrice,\n          currency: best.currency || currency,\n          bookUrl: best.url,\n          savingsVsMedian,\n          requestId: meta.requestId ?? null,\n          report:\n            `Cheapest bookable: ${best.ota} at ${best.totalPrice} ${best.currency || currency}` +\n            (savingsVsMedian ? ` (saves ${savingsVsMedian} vs median)` : '') +\n            `\\n${best.url}`,\n        }\n      : {\n          property: data.property ?? null,\n          ota: null,\n          bookUrl: null,\n          report: 'No bookable offer found for these dates.',\n          requestId: meta.requestId ?? null,\n        },\n  });\n}\nreturn out;"
+      },
+      "id": "cheapest-link-resolver-code",
+      "name": "Resolve Cheapest Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "id": "cheapest-link-resolver-delivery",
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {},
+      "name": "Deliver (webhook) — configure",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "ScoutingAPI: Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ScoutingAPI: Request": {
+      "main": [
+        [
+          {
+            "node": "Resolve Cheapest Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Cheapest Link": {
+      "main": [
+        [
+          {
+            "node": "Deliver (webhook) — configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-cheapest-link-resolver-v1",
+  "tags": []
+}

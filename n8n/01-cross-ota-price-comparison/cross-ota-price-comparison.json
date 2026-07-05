@@ -1,0 +1,219 @@
+{
+  "name": "ScoutingAPI — Multi-source price comparison → cheapest-rate report",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "cross-ota-price-comparison-trigger",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "name",
+              "value": "Hotel X Sibenik",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "location",
+              "value": "Sibenik, HR",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "adults",
+              "value": "2",
+              "type": "number"
+            },
+            {
+              "id": "assign-6",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cross-ota-price-comparison-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cross-ota-price-comparison-http",
+      "name": "ScoutingAPI: Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Build a cheapest-rate report from the ScoutingAPI /v1/price-compare response.\n// Input item: { data: PriceCompare, meta: SuccessMeta }.\nconst out = [];\nfor (const item of $input.all()) {\n  const data = item.json.data || {};\n  const meta = item.json.meta || {};\n  const offers = Array.isArray(data.offers) ? [...data.offers] : [];\n  offers.sort((a, b) => (a.totalPrice ?? Infinity) - (b.totalPrice ?? Infinity));\n  const cheapest = offers[0] || null;\n  const currency = data.currency || meta.currency || 'USD';\n  const lines = offers.map(\n    (o, i) => `${i + 1}. ${o.ota}: ${o.totalPrice} ${o.currency || currency}${o.url ? ' — ' + o.url : ''}`,\n  );\n  const savingsVsMedian =\n    cheapest && typeof data.median === 'number'\n      ? Math.max(0, Math.round((data.median - cheapest.totalPrice) * 100) / 100)\n      : null;\n  const report =\n    `Cheapest rate for ${data.property ?? 'property'}\\n` +\n    `Stay: ${data.checkIn} → ${data.checkOut} (${currency})\\n` +\n    (cheapest\n      ? `Cheapest: ${cheapest.ota} at ${cheapest.totalPrice} ${currency}` +\n        (savingsVsMedian ? ` (saves ${savingsVsMedian} ${currency} vs median ${data.median})` : '') +\n        `\\n${cheapest.url ?? ''}\\n\\n`\n      : `No offers returned.\\n\\n`) +\n    `All ${offers.length} offers (low→high):\\n${lines.join('\\n')}\\n\\n` +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      property: data.property ?? null,\n      checkIn: data.checkIn ?? null,\n      checkOut: data.checkOut ?? null,\n      currency,\n      cheapestOta: cheapest?.ota ?? null,\n      cheapestTotal: cheapest?.totalPrice ?? null,\n      min: data.min ?? null,\n      median: data.median ?? null,\n      savingsVsMedian,\n      offers,\n      report,\n    },\n  });\n}\nreturn out;"
+      },
+      "id": "cross-ota-price-comparison-code",
+      "name": "Build Cheapest-Rate Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "id": "cross-ota-price-comparison-delivery",
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "={{ $json.report }}",
+        "otherOptions": {}
+      },
+      "name": "Send Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "ScoutingAPI: Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ScoutingAPI: Request": {
+      "main": [
+        [
+          {
+            "node": "Build Cheapest-Rate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cheapest-Rate Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-cross-ota-price-comparison-v1",
+  "tags": []
+}

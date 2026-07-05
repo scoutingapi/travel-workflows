@@ -1,0 +1,208 @@
+{
+  "name": "ScoutingAPI — Review-intelligence digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "review-intelligence-digest-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "platform",
+              "value": "booking",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "listingId",
+              "value": "abramovic2",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "limit",
+              "value": "40",
+              "type": "number"
+            },
+            {
+              "id": "assign-4",
+              "name": "sort",
+              "value": "recent",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "review-intelligence-digest-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/reviews",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $json.listingId }}"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $json.limit }}"
+            },
+            {
+              "name": "sort",
+              "value": "={{ $json.sort }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "review-intelligence-digest-http",
+      "name": "ScoutingAPI: Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Build a reputation digest from the ScoutingAPI /v1/reviews response.\n// Input item: { data: Review[], meta: SuccessMeta }.\nconst STOP = new Set(\n  ('the a an and or but to of in on for with was were is are it we they i you this that had have ' +\n   'has very really just so at as our my me not no all had them their there here would could stay ' +\n   'stayed place property host would great good nice')\n    .split(' '),\n);\nconst out = [];\nfor (const item of $input.all()) {\n  const reviews = Array.isArray(item.json.data) ? item.json.data : [];\n  const meta = item.json.meta || {};\n  const scale = reviews[0]?.ratingScale ?? 5;\n  const rated = reviews.filter((r) => typeof r.rating === 'number');\n  const avg = rated.length\n    ? Math.round((rated.reduce((s, r) => s + r.rating, 0) / rated.length) * 100) / 100\n    : null;\n  const lowThreshold = scale * 0.6;\n  const low = rated.filter((r) => r.rating <= lowThreshold);\n  const freq = {};\n  for (const r of reviews) {\n    for (const w of String(r.text || '')\n      .toLowerCase()\n      .replace(/[^a-z\\s]/g, ' ')\n      .split(/\\s+/)) {\n      if (w.length < 4 || STOP.has(w)) continue;\n      freq[w] = (freq[w] || 0) + 1;\n    }\n  }\n  const themes = Object.entries(freq)\n    .sort((a, b) => b[1] - a[1])\n    .slice(0, 8)\n    .map(([w, c]) => `${w} (${c})`);\n  const recentComplaints = low\n    .slice(0, 5)\n    .map((r) => `• ${r.rating}/${r.ratingScale} — ${String(r.text || '').slice(0, 140)} (${r.author ?? '?'}, ${r.date ?? ''})`);\n  const report =\n    `Review digest — ${reviews.length} reviews (avg ${avg ?? 'n/a'}/${scale})\\n\\n` +\n    `Top themes: ${themes.join(', ') || 'n/a'}\\n\\n` +\n    (recentComplaints.length\n      ? `Recent low ratings (${low.length}):\\n${recentComplaints.join('\\n')}\\n\\n`\n      : `No recent low ratings.\\n\\n`) +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      count: reviews.length,\n      avgRating: avg,\n      ratingScale: scale,\n      themes,\n      lowRatingCount: low.length,\n      recentComplaints,\n      report,\n    },\n  });\n}\nreturn out;"
+      },
+      "id": "review-intelligence-digest-code",
+      "name": "Build Reputation Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "id": "review-intelligence-digest-delivery",
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "={{ $json.report }}",
+        "otherOptions": {}
+      },
+      "name": "Send Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "ScoutingAPI: Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ScoutingAPI: Request": {
+      "main": [
+        [
+          {
+            "node": "Build Reputation Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reputation Digest": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-review-intelligence-digest-v1",
+  "tags": []
+}

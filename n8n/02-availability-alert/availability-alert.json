@@ -1,0 +1,218 @@
+{
+  "name": "ScoutingAPI — Property availability watch → alert",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "availability-alert-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "platform",
+              "value": "airbnb",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "listingId",
+              "value": "42307961",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "startDate",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "endDate",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "onlyAvailable",
+              "value": "true",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "availability-alert-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/availability",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $json.listingId }}"
+            },
+            {
+              "name": "startDate",
+              "value": "={{ $json.startDate }}"
+            },
+            {
+              "name": "endDate",
+              "value": "={{ $json.endDate }}"
+            },
+            {
+              "name": "onlyAvailable",
+              "value": "={{ $json.onlyAvailable }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "availability-alert-http",
+      "name": "ScoutingAPI: Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Detect newly-available dates; de-dup against the last run via n8n static data.\n// Input item: { data: Availability[], meta } — onlyAvailable=true keeps it lean.\nconst staticData = $getWorkflowStaticData('global');\nconst previous = new Set(staticData.lastAvailableDates || []);\nconst available = [];\nfor (const item of $input.all()) {\n  const rows = Array.isArray(item.json.data) ? item.json.data : [];\n  for (const listing of rows) {\n    for (const d of listing.dates || []) {\n      if (d.available && d.bookable !== false) available.push(d.date);\n    }\n  }\n}\nconst uniqueAvailable = [...new Set(available)].sort();\nconst newDates = uniqueAvailable.filter((d) => !previous.has(d));\nstaticData.lastAvailableDates = uniqueAvailable;\nconst meta = $input.first()?.json?.meta || {};\n// Fire only on a change: no newly-available date → emit nothing → no alert.\nif (newDates.length === 0) return [];\nconst message =\n  ':calendar: Availability update\\n' +\n  `Newly available: ${newDates.join(', ')}\\n` +\n  `Currently available (${uniqueAvailable.length}): ${uniqueAvailable.join(', ')}\\n` +\n  `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\nreturn [{ json: { newDates, allAvailable: uniqueAvailable, creditsCharged: meta.creditsCharged ?? 0, message } }];"
+      },
+      "id": "availability-alert-code",
+      "name": "Detect Newly Available",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "id": "availability-alert-delivery",
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "={{ $json.report }}",
+        "otherOptions": {}
+      },
+      "name": "Send Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "ScoutingAPI: Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ScoutingAPI: Request": {
+      "main": [
+        [
+          {
+            "node": "Detect Newly Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Newly Available": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-availability-alert-v1",
+  "tags": []
+}
