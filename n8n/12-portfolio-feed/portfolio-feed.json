@@ -1,0 +1,329 @@
+{
+  "name": "ScoutingAPI — Portfolio price & occupancy feed",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "portfolio-feed-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "listings",
+              "value": "airbnb:42307961, booking:abramovic2, vrbo:3089012",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "platform",
+              "value": "airbnb",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "portfolio-feed-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Expand the saved listing set into one item per listing.\nconst inputs = $('Set Inputs').first().json;\nconst entries = String(inputs.listings || '')\n  .split(',')\n  .map((s) => s.trim())\n  .filter(Boolean);\nconst items = [];\nfor (const entry of entries) {\n  // \"platform:listingId\" (e.g. airbnb:12345). Bare ids fall back to the default platform.\n  const idx = entry.indexOf(':');\n  const platform = idx > -1 ? entry.slice(0, idx).trim() : (inputs.platform || 'airbnb');\n  const listingId = idx > -1 ? entry.slice(idx + 1).trim() : entry;\n  items.push({\n    json: {\n      platform,\n      listingId,\n      checkIn: inputs.checkIn,\n      checkOut: inputs.checkOut,\n      currency: inputs.currency,\n    },\n  });\n}\nreturn items;"
+      },
+      "id": "portfolio-feed-step-0",
+      "name": "Fan out portfolio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.scoutingapi.com/v1/listing/{{ $json.platform }}/{{ $json.listingId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "portfolio-feed-step-1",
+      "name": "Listing detail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/price",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $('Fan out portfolio').item.json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $('Fan out portfolio').item.json.listingId }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $('Fan out portfolio').item.json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $('Fan out portfolio').item.json.checkOut }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $('Fan out portfolio').item.json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "portfolio-feed-step-2",
+      "name": "Nightly price",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/reviews",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $('Fan out portfolio').item.json.platform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $('Fan out portfolio').item.json.listingId }}"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            },
+            {
+              "name": "sort",
+              "value": "recent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "portfolio-feed-step-3",
+      "name": "Recent reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Roll the per-listing detail + price + reviews into one consolidated digest.\nconst inputs = $('Set Inputs').first().json;\nconst fan = $('Fan out portfolio').all();\nconst details = $('Listing detail').all();\nconst prices = $('Nightly price').all();\nconst reviews = $('Recent reviews').all();\nconst currency = inputs.currency || 'USD';\nconst rows = [];\nconst lines = [];\nfor (let i = 0; i < fan.length; i++) {\n  const base = fan[i].json;\n  const listing = (((details[i] || {}).json || {}).data) || {};\n  const price = (((prices[i] || {}).json || {}).data) || {};\n  const revData = (((reviews[i] || {}).json || {}).data) || [];\n  const name = listing.name || base.listingId;\n  const nightly = price.nightlyPrice != null ? price.nightlyPrice : null;\n  const total = price.totalPrice != null ? price.totalPrice : null;\n  const cur = price.currency || (listing.price && listing.price.currency) || currency;\n  const rating = listing.guestRating != null ? listing.guestRating : null;\n  const scale = listing.ratingScale != null ? listing.ratingScale : null;\n  const recent = Array.isArray(revData) ? revData.length : 0;\n  const avgRecent = recent\n    ? Math.round((revData.reduce((s, r) => s + (typeof r.rating === 'number' ? r.rating : 0), 0) / recent) * 10) / 10\n    : null;\n  rows.push({\n    platform: base.platform,\n    listingId: base.listingId,\n    name,\n    nightly,\n    total,\n    currency: cur,\n    rating,\n    ratingScale: scale,\n    recentReviews: recent,\n    recentAvgRating: avgRecent,\n  });\n  lines.push(\n    '• ' + name + ' (' + base.platform + ')' +\n      ' — ' + (nightly != null ? nightly + ' ' + cur + '/night' : 'price n/a') +\n      (rating != null ? ' · ' + rating + (scale ? '/' + scale : '') : '') +\n      ' · ' + recent + ' recent reviews' + (avgRecent != null ? ' (avg ' + avgRecent + ')' : ''),\n  );\n}\nconst priced = rows.filter((r) => r.nightly != null).map((r) => r.nightly).sort((a, b) => a - b);\nconst medianNightly = priced.length ? priced[Math.floor((priced.length - 1) / 2)] : null;\nconst report =\n  ':bar_chart: Portfolio feed — ' + rows.length + ' listings · ' +\n    (inputs.checkIn || '') + ' to ' + (inputs.checkOut || '') + '\\n' +\n  (medianNightly != null ? 'Median nightly: ' + medianNightly + ' ' + currency + '\\n' : '') +\n  lines.join('\\n');\nreturn [{ json: { asOf: inputs.checkIn || null, count: rows.length, medianNightly, listings: rows, report } }];"
+      },
+      "id": "portfolio-feed-step-4",
+      "name": "Build portfolio digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        0
+      ]
+    },
+    {
+      "id": "portfolio-feed-delivery",
+      "position": [
+        1160,
+        0
+      ],
+      "parameters": {},
+      "name": "Deliver (sheet) — configure",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "Fan out portfolio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fan out portfolio": {
+      "main": [
+        [
+          {
+            "node": "Listing detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listing detail": {
+      "main": [
+        [
+          {
+            "node": "Nightly price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nightly price": {
+      "main": [
+        [
+          {
+            "node": "Recent reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recent reviews": {
+      "main": [
+        [
+          {
+            "node": "Build portfolio digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build portfolio digest": {
+      "main": [
+        [
+          {
+            "node": "Deliver (sheet) — configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-portfolio-feed-v1",
+  "tags": []
+}

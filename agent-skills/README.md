@@ -14,3 +14,5 @@ One portable `SKILL.md` per workflow — install into any agent runtime that rea
 - [Competitor rate & availability benchmark → report](comp-set-benchmark.md) — Benchmark your listing’s rate and availability against a defined comp-set and get a weekly position report.
 - [Agent-native scouting via MCP](mcp-agent-scouting.md) — Connect ScoutingAPI as a Claude/Cursor MCP connector and scout stays, compare prices and check availability conversationally — no keys pasted.
 - [Booking-ready cheapest-link resolver](cheapest-link-resolver.md) — Resolve a property + dates to the single cheapest bookable link (with price and OTA) as clean JSON — for a concierge bot, a "book now" button, or an internal tool.
+- [Event / peak-date demand radar](event-radar.md) — Watch supply and prices around an event or peak date-window in a city and get alerted when demand tightens.
+- [Portfolio price & occupancy feed](portfolio-feed.md) — A daily digest across a saved set of listings — price, rating and recent reviews per listing in one report.

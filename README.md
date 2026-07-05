@@ -18,13 +18,15 @@ Ready-to-use accommodation & travel automations for your AI agent or favorite to
 - **Competitor rate & availability benchmark → report** — Benchmark your listing’s rate and availability against a defined comp-set and get a weekly position report.
 - **Agent-native scouting via MCP** — Connect ScoutingAPI as a Claude/Cursor MCP connector and scout stays, compare prices and check availability conversationally — no keys pasted.
 - **Booking-ready cheapest-link resolver** — Resolve a property + dates to the single cheapest bookable link (with price and OTA) as clean JSON — for a concierge bot, a "book now" button, or an internal tool.
+- **Event / peak-date demand radar** — Watch supply and prices around an event or peak date-window in a city and get alerted when demand tightens.
+- **Portfolio price & occupancy feed** — A daily digest across a saved set of listings — price, rating and recent reviews per listing in one report.
 
 ## Two ways to run each one
 
 - **AI agent** — install the `SKILL.md` from [`agent-skills/`](agent-skills/); your agent is the brain, no separate AI key needed.
 - **n8n** — import the JSON from [`n8n/`](n8n/); the transforms are plain JavaScript, so no LLM key is required.
 
-_9 of the 10 workflows ship an n8n import; the MCP-native ones are agent/MCP-only._
+_11 of the 12 workflows ship an n8n import; the MCP-native ones are agent/MCP-only._
 
 ## Credits
 
@@ -44,6 +46,10 @@ Part of the ScoutingAPI open resource set — one unified accommodation-data API
 - [travel-api](https://github.com/scoutingapi/travel-api)
 - [travel-skills](https://github.com/scoutingapi/travel-skills)
 - [hotel-mcp](https://github.com/scoutingapi/hotel-mcp)
+- [airbnb-skills](https://github.com/scoutingapi/airbnb-skills)
+- [booking-com-skills](https://github.com/scoutingapi/booking-com-skills)
+- [vrbo-skills](https://github.com/scoutingapi/vrbo-skills)
+- [google-hotels-skills](https://github.com/scoutingapi/google-hotels-skills)
 
 - Website: <https://scoutingapi.com> · Docs: <https://scoutingapi.com/docs> · Status: <https://status.scoutingapi.com>
 

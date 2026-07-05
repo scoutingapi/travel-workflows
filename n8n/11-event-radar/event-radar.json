@@ -1,0 +1,381 @@
+{
+  "name": "ScoutingAPI — Event / peak-date demand radar",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "event-radar-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "eventName",
+              "value": "Ultra Festival",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "location",
+              "value": "Split, HR",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "checkIn",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "checkOut",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "platforms",
+              "value": "airbnb,booking,vrbo",
+              "type": "string"
+            },
+            {
+              "id": "assign-6",
+              "name": "currency",
+              "value": "EUR",
+              "type": "string"
+            },
+            {
+              "id": "assign-7",
+              "name": "supplyDropPct",
+              "value": "20",
+              "type": "number"
+            },
+            {
+              "id": "assign-8",
+              "name": "priceRisePct",
+              "value": "10",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "event-radar-set",
+      "name": "Set Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $json.checkOut }}"
+            },
+            {
+              "name": "platforms",
+              "value": "={{ $json.platforms }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $json.currency }}"
+            },
+            {
+              "name": "limit",
+              "value": "40"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "event-radar-step-0",
+      "name": "Scan market",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Reduce the search fan-out to a supply/price snapshot; diff vs the last run.\nconst inputs = $('Set Inputs').first().json;\nconst staticData = $getWorkflowStaticData('global');\nconst rows = [];\nfor (const item of $input.all()) {\n  const data = Array.isArray(item.json.data) ? item.json.data : [];\n  for (const p of data) rows.push(p);\n}\nconst totals = rows\n  .map((p) => (p.price ? p.price.totalPrice : null))\n  .filter((n) => typeof n === 'number')\n  .sort((a, b) => a - b);\nconst supply = rows.length;\nconst median = totals.length ? totals[Math.floor((totals.length - 1) / 2)] : null;\nconst cheapest = totals.length ? totals[0] : null;\nconst bell = rows.find((p) => p.name) || rows[0] || null;\nconst prevSupply = typeof staticData.lastSupply === 'number' ? staticData.lastSupply : null;\nconst prevMedian = typeof staticData.lastMedian === 'number' ? staticData.lastMedian : null;\nstaticData.lastSupply = supply;\nstaticData.lastMedian = median;\nconst supplyDropPct =\n  prevSupply && prevSupply > 0 ? Math.round(((prevSupply - supply) / prevSupply) * 1000) / 10 : null;\nconst priceRisePct =\n  prevMedian && median ? Math.round(((median - prevMedian) / prevMedian) * 1000) / 10 : null;\nreturn [\n  {\n    json: {\n      supply,\n      median,\n      cheapest,\n      prevSupply,\n      prevMedian,\n      supplyDropPct,\n      priceRisePct,\n      bellwetherName: bell && bell.name ? bell.name : null,\n      bellwetherCity: (bell && bell.location && bell.location.city) || inputs.location || null,\n      bellwetherPlatform: bell ? bell.platform : null,\n      bellwetherListingId: bell ? bell.platformListingId : null,\n      currency: inputs.currency || (rows[0] && rows[0].price && rows[0].price.currency) || 'USD',\n    },\n  },\n];"
+      },
+      "id": "event-radar-step-1",
+      "name": "Demand snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/availability",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $json.bellwetherPlatform }}"
+            },
+            {
+              "name": "listingId",
+              "value": "={{ $json.bellwetherListingId }}"
+            },
+            {
+              "name": "startDate",
+              "value": "={{ $('Set Inputs').first().json.checkIn }}"
+            },
+            {
+              "name": "endDate",
+              "value": "={{ $('Set Inputs').first().json.checkOut }}"
+            },
+            {
+              "name": "onlyAvailable",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "event-radar-step-2",
+      "name": "Bellwether availability",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('Demand snapshot').first().json.bellwetherName }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $('Demand snapshot').first().json.bellwetherCity }}"
+            },
+            {
+              "name": "checkIn",
+              "value": "={{ $('Set Inputs').first().json.checkIn }}"
+            },
+            {
+              "name": "checkOut",
+              "value": "={{ $('Set Inputs').first().json.checkOut }}"
+            },
+            {
+              "name": "currency",
+              "value": "={{ $('Set Inputs').first().json.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "event-radar-step-3",
+      "name": "Bellwether price-compare",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
+          "name": "ScoutingAPI – Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Build the event-radar alert; fire only on tightening supply or rising prices.\nconst inputs = $('Set Inputs').first().json;\nconst snap = $('Demand snapshot').first().json;\nconst availData = ($('Bellwether availability').all()[0] || {}).json || {};\nconst avail = Array.isArray(availData.data) ? availData.data : [];\nconst bookableDays = avail.reduce(\n  (n, l) => n + (l.dates || []).filter((d) => d.available && d.bookable !== false).length,\n  0,\n);\nconst pc = ($input.first() && $input.first().json && $input.first().json.data) || {};\nconst currency = snap.currency || 'USD';\nconst supplyDrop = Number(inputs.supplyDropPct) > 0 ? Number(inputs.supplyDropPct) : 20;\nconst priceRise = Number(inputs.priceRisePct) > 0 ? Number(inputs.priceRisePct) : 10;\nconst tightening = snap.supplyDropPct != null && snap.supplyDropPct >= supplyDrop;\nconst rising = snap.priceRisePct != null && snap.priceRisePct >= priceRise;\nif (!tightening && !rising) return [];\nconst supplyLine =\n  'Supply: ' + snap.supply + ' listings' +\n  (snap.supplyDropPct != null ? ' (' + (snap.supplyDropPct >= 0 ? '-' : '+') + Math.abs(snap.supplyDropPct) + '% vs last run)' : '');\nconst priceLine =\n  'Median: ' + (snap.median != null ? snap.median : '?') + ' ' + currency +\n  (snap.priceRisePct != null ? ' (' + (snap.priceRisePct >= 0 ? '+' : '') + snap.priceRisePct + '% vs last run)' : '');\nconst bellLine = snap.bellwetherName\n  ? 'Bellwether \"' + snap.bellwetherName + '\": ' + bookableDays + ' bookable days · cross-OTA min ' +\n    (pc.min != null ? pc.min : '?') + ' / median ' + (pc.median != null ? pc.median : '?') + ' ' + (pc.currency || currency)\n  : '';\nconst message =\n  ':rotating_light: Event demand radar — ' + (inputs.eventName || inputs.location) + '\\n' +\n  supplyLine + '\\n' + priceLine + '\\n' + 'Cheapest now: ' + (snap.cheapest != null ? snap.cheapest : '?') + ' ' + currency + '\\n' +\n  (bellLine ? bellLine + '\\n' : '') +\n  (tightening ? 'Supply is tightening — a pricing opportunity.\\n' : '') +\n  (rising ? 'Prices are rising — consider adjusting rates.\\n' : '');\nreturn [{ json: { supply: snap.supply, median: snap.median, cheapest: snap.cheapest, tightening, rising, bookableDays, report: message } }];"
+      },
+      "id": "event-radar-step-4",
+      "name": "Build event radar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        0
+      ]
+    },
+    {
+      "id": "event-radar-delivery",
+      "position": [
+        1160,
+        0
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "={{ $json.report }}",
+        "otherOptions": {}
+      },
+      "name": "Send Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Inputs": {
+      "main": [
+        [
+          {
+            "node": "Scan market",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scan market": {
+      "main": [
+        [
+          {
+            "node": "Demand snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demand snapshot": {
+      "main": [
+        [
+          {
+            "node": "Bellwether availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bellwether availability": {
+      "main": [
+        [
+          {
+            "node": "Bellwether price-compare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bellwether price-compare": {
+      "main": [
+        [
+          {
+            "node": "Build event radar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build event radar": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "scoutingapi-event-radar-v1",
+  "tags": []
+}
