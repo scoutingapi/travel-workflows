@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 For a defined comp-set of listings, pull each one’s price and day-by-day availability, then benchmark your own listing against the set — where your rate ranks, the cheapest and median rates, and an occupancy signal from how many dates each comp has open. It fans the comp-set out, calls GET /v1/price and GET /v1/availability per listing, and correlates both into one report. A revenue-management staple, on a schedule.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 

@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Owners and property managers watch a fixed set of listings — their own units, or the ones a client cares about — and want one daily readout instead of opening each app. This feed takes your saved "platform:listingId" set, and for each listing pulls full detail (GET /v1/listing/{platform}/{id}), a real nightly price for your dates (GET /v1/price) and the latest reviews (GET /v1/reviews), then consolidates everything into a single report you can drop into Slack, email, a Google Sheet or a BI tool — the same shape across Airbnb, Booking.com and Vrbo.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 

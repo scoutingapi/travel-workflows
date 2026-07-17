@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Rate parity erodes quietly: one OTA quietly undersells the rate you want your property to hold, and you only find out when direct bookings dry up. This monitor calls the flagship price-compare endpoint for your property on a schedule, ranks every OTA offer, measures each against the ScoutingAPI-computed median, and posts a parity-exception digest — which platforms are below the median, by how much, and the total spread — so a revenue manager can act on a paper trail instead of a hunch.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 

@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Around a concert, conference or holiday weekend, accommodation supply tightens and prices climb — and the window to react is short. This radar scans the market for a city and date-window on a schedule (GET /v1/search), tracks the available-listing count and median price against the previous run, deep-checks a bellwether listing’s availability and cross-OTA price, and alerts when supply drops or prices rise beyond your thresholds — a pricing-opportunity signal for hosts and an early demand read for investors.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 

@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Underwriting a short-term-rental market means one repeatable dataset: what is listed, on which platform, at what price, with how many beds and what rating. This workflow fans a search across platforms to discover listings in your area and dates, keeps the top N, re-prices each precisely with the dedicated price endpoint, and appends a normalized row per listing — name, platform, beds, occupancy, rating (on its native scale), nightly and total price, and URL — to a Google Sheet or CSV. Re-run it on a cadence to build a time series for comps and occupancy signals.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 

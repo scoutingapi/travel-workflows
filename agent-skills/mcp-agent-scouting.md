@@ -12,13 +12,13 @@ auth: bearer-api-key | oauth2-pkce
 
 Give an AI agent first-class access to accommodation data without pasting an API key into the model. Connect ScoutingAPI’s native MCP server once (OAuth 2.1 + PKCE), and the agent gains seven read-only tools — search stays, check availability, get a listing, get a price, compare prices across OTAs, get reviews, and poll async jobs — that it can call in the flow of a conversation over one unified schema. It is the agent-native path the scraping-template catalogs cannot match.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 
 ## Steps
 
-1. **Add ScoutingAPI as a custom MCP connector** — In Claude.ai (or Claude Desktop / Cursor) add a custom connector with the server URL https://mcp.scoutingapi.com. No API key is pasted into the agent.
+1. **Add ScoutingAPI as a custom MCP connector** — In Claude.ai (or Claude Desktop / Cursor) add a custom connector with the server URL https://mcp.scoutingapi.com/mcp. No API key is pasted into the agent.
 2. **Authorize once (OAuth 2.1 + PKCE)** — Complete the browser OAuth prompt — with dynamic client registration — to link the connector to your ScoutingAPI account and its credit balance. Usage is metered to that account.
 3. **Scout in the conversation** — Ask the agent to find stays, compare a property across OTAs, or check availability. It calls search_stays, compare_prices, check_availability and the other read-only tools directly.
 4. **Get answers in the flow of the chat** — The agent reads the unified-schema results and answers inline — the cheapest cross-OTA rate, bookable dates, or a ranked shortlist — no glue code, no keys in the prompt.
@@ -31,7 +31,7 @@ comparison, availability, reviews — without managing an API key.
 
 ## Connect
 
-1. Add a custom connector with URL `https://mcp.scoutingapi.com` (Claude.ai connector settings, or
+1. Add a custom connector with URL `https://mcp.scoutingapi.com/mcp` (Claude.ai connector settings, or
    `claude_desktop_config.json` for Desktop/Cursor).
 2. Complete the OAuth 2.1 + PKCE prompt in the browser (dynamic client registration — nothing to
    pre-register). The connector is linked to your account and metered there.
@@ -55,7 +55,7 @@ scoutingapi-mcp and scoutingapi-search skills.
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `search_stays` — search stays across platforms by location, dates, occupancy and filters.
 - `check_availability` — day-by-day availability for a known listing over a date window.
 - `get_listing` — full detail for one listing.

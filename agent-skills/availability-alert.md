@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Given a known listing (or a batch) and a date window, poll day-by-day availability on a schedule and alert the instant a wanted date becomes bookable. It calls GET /v1/availability with onlyAvailable=true, flattens the returned calendar, de-dups against the previous run so you are only pinged on a real change, and posts the newly-available dates. This is the automation twin of the App’s availability-alert saved search.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 
@@ -76,7 +76,7 @@ console.log(open.length, 'bookable dates', open.join(', '));
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `check_availability` — day-by-day availability for a known listing over a date window.
 
 ## Async & partial failures

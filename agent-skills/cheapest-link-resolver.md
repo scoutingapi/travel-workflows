@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Sometimes you do not want a report — you want the answer: the one cheapest bookable link for this property on these dates, as a clean object a bot or a button can act on. This workflow calls the flagship price-compare endpoint, keeps only offers that carry a bookable URL, sorts by total price, and returns the single cheapest — OTA, price, currency, deep link, and the savings versus the median. It is the "resolve to a deal link" primitive behind a concierge assistant, a checkout CTA, or an internal booking tool.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 
@@ -73,7 +73,7 @@ console.log(cheapest.ota, cheapest.totalPrice, cheapest.url);
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `compare_prices` — compare one property across OTAs with computed min + median.
 
 ## Async & partial failures

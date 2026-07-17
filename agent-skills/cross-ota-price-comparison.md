@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Given a property (or a search) plus dates and occupancy, fetch prices across booking platforms and produce a cheapest-rate report — the trusted, ToS-clean replacement for the fragile "hotel price comparison via scraping" templates. It calls the flagship cross-OTA endpoint, sorts every offer, picks the cheapest, and computes the savings against the ScoutingAPI-computed median.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 
@@ -75,7 +75,7 @@ console.log('cheapest', cheapest.ota, cheapest.totalPrice, '· saves', data.medi
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `compare_prices` — compare one property across OTAs with computed min + median.
 
 ## Async & partial failures

@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Reputation is spread across platforms and scored on different scales, so problems surface late. This workflow pulls normalized reviews for a property (native rating scales preserved, never silently rescaled), summarizes the average, the recurring themes, and the most recent low ratings, and delivers a weekly reputation digest. On the AI-agent path the agent reads the reviews and writes the sentiment summary itself; on the n8n path the aggregation is plain JavaScript, so no LLM key is required — add an LLM node only if you want richer narrative.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 
@@ -75,7 +75,7 @@ console.log(data.length, 'reviews · avg', avg.toFixed(2), '/', scale);
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `get_reviews` — normalized, paginated reviews for one listing.
 
 ## Async & partial failures

@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Fresh inventory is a lead: a new short-term rental appearing in your target market is a management pitch, an acquisition target, or a comp to underwrite. This workflow re-runs your saved search on a schedule, keeps a memory of everything it has already seen, and emits only the listings that are new since the last run — one row per lead, with platform, name, URL, beds, rating and price — straight into your CRM or a Google Sheet. The first run quietly seeds the baseline so you are never flooded with the whole market.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 

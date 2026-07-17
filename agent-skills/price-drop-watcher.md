@@ -12,7 +12,7 @@ auth: bearer-api-key | oauth2-pkce
 
 Track a known listing for specific dates on a schedule and alert when its total price falls to or below a threshold you set. It calls GET /v1/price, compares the returned totalPrice to your priceBelow threshold, and — tracking the last-alerted price in static data — fires only on a NEW drop (first time below, or a further drop since the last alert) with the new price and a booking link. This is the automation twin of the App’s price-drop saved search.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com`
+- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
 - **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
 - **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
 
