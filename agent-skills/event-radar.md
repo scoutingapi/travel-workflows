@@ -1,9 +1,9 @@
 ---
-name: scoutingapi-event-radar
-description: Watch supply and prices around an event or peak date-window in a city and get alerted when demand tightens. Powered by the ScoutingAPI REST API / MCP server.
+name: stayingapi-event-radar
+description: Watch supply and prices around an event or peak date-window in a city and get alerted when demand tightens. Powered by the StayingAPI REST API / MCP server.
 version: 1.0.0
-homepage: https://scoutingapi.com/workflows/event-radar
-license: Proprietary — see https://scoutingapi.com/terms
+homepage: https://stayingapi.com/workflows/event-radar
+license: Proprietary — see https://stayingapi.com/terms
 tools: [search, availability, price-compare]
 auth: bearer-api-key | oauth2-pkce
 ---
@@ -12,9 +12,9 @@ auth: bearer-api-key | oauth2-pkce
 
 Around a concert, conference or holiday weekend, accommodation supply tightens and prices climb — and the window to react is short. This radar scans the market for a city and date-window on a schedule (GET /v1/search), tracks the available-listing count and median price against the previous run, deep-checks a bellwether listing’s availability and cross-OTA price, and alerts when supply drops or prices rise beyond your thresholds — a pricing-opportunity signal for hosts and an early demand read for investors.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
-- **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
-- **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
+- **Base URL:** `https://api.stayingapi.com/v1` (REST) · **MCP:** `https://mcp.stayingapi.com/mcp`
+- **Auth:** `Authorization: Bearer stay_live_…` (free sandbox: `stay_test_…`).
+- **Get a free key** (no card): https://stayingapi.com/signup · Full machine contract: https://api.stayingapi.com/openapi.json
 
 ## Steps
 
@@ -35,7 +35,7 @@ city — "tell me when supply drops or prices climb for these dates in Split."
 2. Track the available count and the median total across runs. When the count falls or the median
    rises past your thresholds, that is tightening demand.
 3. For a concrete read, deep-check a bellwether listing with `GET /v1/availability` (open dates) and
-   `GET /v1/price-compare` (cross-OTA min/median). Use `@scoutingapi/sdk` or the REST endpoints.
+   `GET /v1/price-compare` (cross-OTA min/median). Use `@stayingapi/sdk` or the REST endpoints.
 
 ## Reliability
 
@@ -47,19 +47,19 @@ are on the pricing page.
 
 ```bash
 # Scan the market for the event window…
-curl -sS "https://api.scoutingapi.com/v1/search?location=Split,HR&checkIn=2026-07-13&checkOut=2026-07-20&platforms=airbnb,booking&limit=40" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/search?location=Split,HR&checkIn=2026-07-13&checkOut=2026-07-20&platforms=airbnb,booking&limit=40" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 # …then compare a bellwether property's cross-OTA price
-curl -sS "https://api.scoutingapi.com/v1/price-compare?name=Hotel%20X%20Split&location=Split,HR&checkIn=2026-07-13&checkOut=2026-07-20" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/price-compare?name=Hotel%20X%20Split&location=Split,HR&checkIn=2026-07-13&checkOut=2026-07-20" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 ```
 
-### Example — @scoutingapi/sdk
+### Example — @stayingapi/sdk
 
 ```ts
-import { ScoutingApiClient } from '@scoutingapi/sdk';
+import { StayingApiClient } from '@stayingapi/sdk';
 
-const scout = new ScoutingApiClient({ apiKey: process.env.SCOUTINGAPI_KEY });
+const scout = new StayingApiClient({ apiKey: process.env.STAYINGAPI_KEY });
 
 const { data } = await scout.search({
   location: 'Split, HR',
@@ -78,16 +78,16 @@ console.log('supply', supply, 'median', median); // compare to your last run to 
 ## Async & partial failures
 
 A live call that has to scrape returns `202` + a `jobId`; poll `GET /v1/jobs/{jobId}` (free)
-until `data.status` is `completed`, then read `data.result`. The `@scoutingapi/sdk` auto-polls.
+until `data.status` is `completed`, then read `data.result`. The `@stayingapi/sdk` auto-polls.
 On a fan-out, check `meta.partial` and `meta.platformResults[]` — report what succeeded and note
 any `meta.warnings[]`.
 
 ## Credit awareness
 
 Costs are per-endpoint and metered by result (v3). **Failed, empty and blocked calls are never
-billed**, and sandbox (`scout_test_`) calls are always free. The exact, current costs live only in
-https://scoutingapi.com/pricing and the machine-readable https://api.scoutingapi.com/openapi.json — read them there, don't assume.
+billed**, and sandbox (`stay_test_`) calls are always free. The exact, current costs live only in
+https://stayingapi.com/pricing and the machine-readable https://api.stayingapi.com/openapi.json — read them there, don't assume.
 
 ---
 
-**Get your free key → https://scoutingapi.com/signup** · Docs: https://scoutingapi.com/docs · Workflow: https://scoutingapi.com/workflows/event-radar
+**Get your free key → https://stayingapi.com/signup** · Docs: https://stayingapi.com/docs · Workflow: https://stayingapi.com/workflows/event-radar

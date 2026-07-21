@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Multi-source price comparison → cheapest-rate report",
+  "name": "StayingAPI — Multi-source price comparison → cheapest-rate report",
   "nodes": [
     {
       "parameters": {},
@@ -67,7 +67,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "url": "https://api.stayingapi.com/v1/price-compare",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -102,7 +102,7 @@
         "options": {}
       },
       "id": "cross-ota-price-comparison-http",
-      "name": "ScoutingAPI: Request",
+      "name": "StayingAPI: Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -111,15 +111,15 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Build a cheapest-rate report from the ScoutingAPI /v1/price-compare response.\n// Input item: { data: PriceCompare, meta: SuccessMeta }.\nconst out = [];\nfor (const item of $input.all()) {\n  const data = item.json.data || {};\n  const meta = item.json.meta || {};\n  const offers = Array.isArray(data.offers) ? [...data.offers] : [];\n  offers.sort((a, b) => (a.totalPrice ?? Infinity) - (b.totalPrice ?? Infinity));\n  const cheapest = offers[0] || null;\n  const currency = data.currency || meta.currency || 'USD';\n  const lines = offers.map(\n    (o, i) => `${i + 1}. ${o.ota}: ${o.totalPrice} ${o.currency || currency}${o.url ? ' — ' + o.url : ''}`,\n  );\n  const savingsVsMedian =\n    cheapest && typeof data.median === 'number'\n      ? Math.max(0, Math.round((data.median - cheapest.totalPrice) * 100) / 100)\n      : null;\n  const report =\n    `Cheapest rate for ${data.property ?? 'property'}\\n` +\n    `Stay: ${data.checkIn} → ${data.checkOut} (${currency})\\n` +\n    (cheapest\n      ? `Cheapest: ${cheapest.ota} at ${cheapest.totalPrice} ${currency}` +\n        (savingsVsMedian ? ` (saves ${savingsVsMedian} ${currency} vs median ${data.median})` : '') +\n        `\\n${cheapest.url ?? ''}\\n\\n`\n      : `No offers returned.\\n\\n`) +\n    `All ${offers.length} offers (low→high):\\n${lines.join('\\n')}\\n\\n` +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      property: data.property ?? null,\n      checkIn: data.checkIn ?? null,\n      checkOut: data.checkOut ?? null,\n      currency,\n      cheapestOta: cheapest?.ota ?? null,\n      cheapestTotal: cheapest?.totalPrice ?? null,\n      min: data.min ?? null,\n      median: data.median ?? null,\n      savingsVsMedian,\n      offers,\n      report,\n    },\n  });\n}\nreturn out;"
+        "jsCode": "// Build a cheapest-rate report from the StayingAPI /v1/price-compare response.\n// Input item: { data: PriceCompare, meta: SuccessMeta }.\nconst out = [];\nfor (const item of $input.all()) {\n  const data = item.json.data || {};\n  const meta = item.json.meta || {};\n  const offers = Array.isArray(data.offers) ? [...data.offers] : [];\n  offers.sort((a, b) => (a.totalPrice ?? Infinity) - (b.totalPrice ?? Infinity));\n  const cheapest = offers[0] || null;\n  const currency = data.currency || meta.currency || 'USD';\n  const lines = offers.map(\n    (o, i) => `${i + 1}. ${o.ota}: ${o.totalPrice} ${o.currency || currency}${o.url ? ' — ' + o.url : ''}`,\n  );\n  const savingsVsMedian =\n    cheapest && typeof data.median === 'number'\n      ? Math.max(0, Math.round((data.median - cheapest.totalPrice) * 100) / 100)\n      : null;\n  const report =\n    `Cheapest rate for ${data.property ?? 'property'}\\n` +\n    `Stay: ${data.checkIn} → ${data.checkOut} (${currency})\\n` +\n    (cheapest\n      ? `Cheapest: ${cheapest.ota} at ${cheapest.totalPrice} ${currency}` +\n        (savingsVsMedian ? ` (saves ${savingsVsMedian} ${currency} vs median ${data.median})` : '') +\n        `\\n${cheapest.url ?? ''}\\n\\n`\n      : `No offers returned.\\n\\n`) +\n    `All ${offers.length} offers (low→high):\\n${lines.join('\\n')}\\n\\n` +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      property: data.property ?? null,\n      checkIn: data.checkIn ?? null,\n      checkOut: data.checkOut ?? null,\n      currency,\n      cheapestOta: cheapest?.ota ?? null,\n      cheapestTotal: cheapest?.totalPrice ?? null,\n      min: data.min ?? null,\n      median: data.median ?? null,\n      savingsVsMedian,\n      offers,\n      report,\n    },\n  });\n}\nreturn out;"
       },
       "id": "cross-ota-price-comparison-code",
       "name": "Build Cheapest-Rate Report",
@@ -176,14 +176,14 @@
       "main": [
         [
           {
-            "node": "ScoutingAPI: Request",
+            "node": "StayingAPI: Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "ScoutingAPI: Request": {
+    "StayingAPI: Request": {
       "main": [
         [
           {
@@ -214,6 +214,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-cross-ota-price-comparison-v1",
+  "versionId": "stayingapi-cross-ota-price-comparison-v1",
   "tags": []
 }

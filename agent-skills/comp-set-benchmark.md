@@ -1,9 +1,9 @@
 ---
-name: scoutingapi-comp-set-benchmark
-description: Benchmark your listing’s rate and availability against a defined comp-set and get a weekly position report. Powered by the ScoutingAPI REST API / MCP server.
+name: stayingapi-comp-set-benchmark
+description: Benchmark your listing’s rate and availability against a defined comp-set and get a weekly position report. Powered by the StayingAPI REST API / MCP server.
 version: 1.0.0
-homepage: https://scoutingapi.com/workflows/comp-set-benchmark
-license: Proprietary — see https://scoutingapi.com/terms
+homepage: https://stayingapi.com/workflows/comp-set-benchmark
+license: Proprietary — see https://stayingapi.com/terms
 tools: [price, availability, listing]
 auth: bearer-api-key | oauth2-pkce
 ---
@@ -12,9 +12,9 @@ auth: bearer-api-key | oauth2-pkce
 
 For a defined comp-set of listings, pull each one’s price and day-by-day availability, then benchmark your own listing against the set — where your rate ranks, the cheapest and median rates, and an occupancy signal from how many dates each comp has open. It fans the comp-set out, calls GET /v1/price and GET /v1/availability per listing, and correlates both into one report. A revenue-management staple, on a schedule.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
-- **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
-- **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
+- **Base URL:** `https://api.stayingapi.com/v1` (REST) · **MCP:** `https://mcp.stayingapi.com/mcp`
+- **Auth:** `Authorization: Bearer stay_live_…` (free sandbox: `stay_test_…`).
+- **Get a free key** (no card): https://stayingapi.com/signup · Full machine contract: https://api.stayingapi.com/openapi.json
 
 ## Steps
 
@@ -33,7 +33,7 @@ my rate rank against these five competitors for this week, and how full are they
 1. Take the `platform`, the comp-set `listingIds` (including your own), `yourListingId`, and the
    `checkIn`/`checkOut` dates.
 2. For each listing in the set: call `GET /v1/price` (rate) and `GET /v1/availability` over the
-   window (occupancy). Use `@scoutingapi/sdk` or the REST endpoints.
+   window (occupancy). Use `@stayingapi/sdk` or the REST endpoints.
 3. Correlate by `listingId`: sort the totals to rank your listing, compute the cheapest and median,
    and count each comp's bookable days as a demand signal.
 
@@ -51,19 +51,19 @@ Check `meta.warnings[]` and skip any comp that could not be resolved this run.
 
 ```bash
 # Price one comp (repeat per listing in the set)…
-curl -sS "https://api.scoutingapi.com/v1/price?platform=booking&listingId=abramovic2&checkIn=2026-07-13&checkOut=2026-07-20&currency=EUR" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/price?platform=booking&listingId=abramovic2&checkIn=2026-07-13&checkOut=2026-07-20&currency=EUR" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 # …and its availability over the same window
-curl -sS "https://api.scoutingapi.com/v1/availability?platform=booking&listingId=abramovic2&startDate=2026-07-13&endDate=2026-07-20&onlyAvailable=true" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/availability?platform=booking&listingId=abramovic2&startDate=2026-07-13&endDate=2026-07-20&onlyAvailable=true" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 ```
 
-### Example — @scoutingapi/sdk
+### Example — @stayingapi/sdk
 
 ```ts
-import { ScoutingApiClient } from '@scoutingapi/sdk';
+import { StayingApiClient } from '@stayingapi/sdk';
 
-const scout = new ScoutingApiClient({ apiKey: process.env.SCOUTINGAPI_KEY });
+const scout = new StayingApiClient({ apiKey: process.env.STAYINGAPI_KEY });
 const platform = 'booking';
 const compSet = ['abramovic2', 'amadria-park', 'hotel-x'];
 const yourId = 'abramovic2';
@@ -82,16 +82,16 @@ console.log('your rank', rank, 'of', rows.length, '· cheapest', rows[0].total);
 ## Async & partial failures
 
 A live call that has to scrape returns `202` + a `jobId`; poll `GET /v1/jobs/{jobId}` (free)
-until `data.status` is `completed`, then read `data.result`. The `@scoutingapi/sdk` auto-polls.
+until `data.status` is `completed`, then read `data.result`. The `@stayingapi/sdk` auto-polls.
 On a fan-out, check `meta.partial` and `meta.platformResults[]` — report what succeeded and note
 any `meta.warnings[]`.
 
 ## Credit awareness
 
 Costs are per-endpoint and metered by result (v3). **Failed, empty and blocked calls are never
-billed**, and sandbox (`scout_test_`) calls are always free. The exact, current costs live only in
-https://scoutingapi.com/pricing and the machine-readable https://api.scoutingapi.com/openapi.json — read them there, don't assume.
+billed**, and sandbox (`stay_test_`) calls are always free. The exact, current costs live only in
+https://stayingapi.com/pricing and the machine-readable https://api.stayingapi.com/openapi.json — read them there, don't assume.
 
 ---
 
-**Get your free key → https://scoutingapi.com/signup** · Docs: https://scoutingapi.com/docs · Workflow: https://scoutingapi.com/workflows/comp-set-benchmark
+**Get your free key → https://stayingapi.com/signup** · Docs: https://stayingapi.com/docs · Workflow: https://stayingapi.com/workflows/comp-set-benchmark

@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Competitor rate & availability benchmark",
+  "name": "StayingAPI — Competitor rate & availability benchmark",
   "nodes": [
     {
       "parameters": {
@@ -90,7 +90,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/price",
+        "url": "https://api.stayingapi.com/v1/price",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -130,14 +130,14 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/availability",
+        "url": "https://api.stayingapi.com/v1/availability",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -177,8 +177,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
@@ -302,6 +302,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-comp-set-benchmark-v1",
+  "versionId": "stayingapi-comp-set-benchmark-v1",
   "tags": []
 }

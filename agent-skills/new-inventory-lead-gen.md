@@ -1,9 +1,9 @@
 ---
-name: scoutingapi-new-inventory-lead-gen
-description: Re-run a saved search on a schedule, diff it against the last run, and sync only the newly-listed properties into a CRM or Sheet as leads. Powered by the ScoutingAPI REST API / MCP server.
+name: stayingapi-new-inventory-lead-gen
+description: Re-run a saved search on a schedule, diff it against the last run, and sync only the newly-listed properties into a CRM or Sheet as leads. Powered by the StayingAPI REST API / MCP server.
 version: 1.0.0
-homepage: https://scoutingapi.com/workflows/new-inventory-lead-gen
-license: Proprietary — see https://scoutingapi.com/terms
+homepage: https://stayingapi.com/workflows/new-inventory-lead-gen
+license: Proprietary — see https://stayingapi.com/terms
 tools: [search, availability]
 auth: bearer-api-key | oauth2-pkce
 ---
@@ -12,9 +12,9 @@ auth: bearer-api-key | oauth2-pkce
 
 Fresh inventory is a lead: a new short-term rental appearing in your target market is a management pitch, an acquisition target, or a comp to underwrite. This workflow re-runs your saved search on a schedule, keeps a memory of everything it has already seen, and emits only the listings that are new since the last run — one row per lead, with platform, name, URL, beds, rating and price — straight into your CRM or a Google Sheet. The first run quietly seeds the baseline so you are never flooded with the whole market.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
-- **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
-- **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
+- **Base URL:** `https://api.stayingapi.com/v1` (REST) · **MCP:** `https://mcp.stayingapi.com/mcp`
+- **Auth:** `Authorization: Bearer stay_live_…` (free sandbox: `stay_test_…`).
+- **Get a free key** (no card): https://stayingapi.com/signup · Full machine contract: https://api.stayingapi.com/openapi.json
 
 ## Steps
 
@@ -52,16 +52,16 @@ platform that failed so a gap is not mistaken for "no new inventory."
 ### Example — REST
 
 ```bash
-curl -sS "https://api.scoutingapi.com/v1/search?location=Split,HR&platforms=airbnb,vrbo,booking&limit=30&currency=EUR" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/search?location=Split,HR&platforms=airbnb,vrbo,booking&limit=30&currency=EUR" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 ```
 
-### Example — @scoutingapi/sdk
+### Example — @stayingapi/sdk
 
 ```ts
-import { ScoutingApiClient } from '@scoutingapi/sdk';
+import { StayingApiClient } from '@stayingapi/sdk';
 
-const scout = new ScoutingApiClient({ apiKey: process.env.SCOUTINGAPI_KEY });
+const scout = new StayingApiClient({ apiKey: process.env.STAYINGAPI_KEY });
 
 const { data, meta } = await scout.search({
   location: 'Split, HR',
@@ -78,16 +78,16 @@ console.log(data.length, 'listings', meta.creditsCharged, 'credits');
 ## Async & partial failures
 
 A live call that has to scrape returns `202` + a `jobId`; poll `GET /v1/jobs/{jobId}` (free)
-until `data.status` is `completed`, then read `data.result`. The `@scoutingapi/sdk` auto-polls.
+until `data.status` is `completed`, then read `data.result`. The `@stayingapi/sdk` auto-polls.
 On a fan-out, check `meta.partial` and `meta.platformResults[]` — report what succeeded and note
 any `meta.warnings[]`.
 
 ## Credit awareness
 
 Costs are per-endpoint and metered by result (v3). **Failed, empty and blocked calls are never
-billed**, and sandbox (`scout_test_`) calls are always free. The exact, current costs live only in
-https://scoutingapi.com/pricing and the machine-readable https://api.scoutingapi.com/openapi.json — read them there, don't assume.
+billed**, and sandbox (`stay_test_`) calls are always free. The exact, current costs live only in
+https://stayingapi.com/pricing and the machine-readable https://api.stayingapi.com/openapi.json — read them there, don't assume.
 
 ---
 
-**Get your free key → https://scoutingapi.com/signup** · Docs: https://scoutingapi.com/docs · Workflow: https://scoutingapi.com/workflows/new-inventory-lead-gen
+**Get your free key → https://stayingapi.com/signup** · Docs: https://stayingapi.com/docs · Workflow: https://stayingapi.com/workflows/new-inventory-lead-gen

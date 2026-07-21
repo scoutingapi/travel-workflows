@@ -1,9 +1,9 @@
 ---
-name: scoutingapi-review-intelligence-digest
-description: Pull normalized reviews for a property on a schedule and deliver a weekly digest — average rating, recurring themes, and the latest complaints to act on. Powered by the ScoutingAPI REST API / MCP server.
+name: stayingapi-review-intelligence-digest
+description: Pull normalized reviews for a property on a schedule and deliver a weekly digest — average rating, recurring themes, and the latest complaints to act on. Powered by the StayingAPI REST API / MCP server.
 version: 1.0.0
-homepage: https://scoutingapi.com/workflows/review-intelligence-digest
-license: Proprietary — see https://scoutingapi.com/terms
+homepage: https://stayingapi.com/workflows/review-intelligence-digest
+license: Proprietary — see https://stayingapi.com/terms
 tools: [reviews, listing]
 auth: bearer-api-key | oauth2-pkce
 ---
@@ -12,9 +12,9 @@ auth: bearer-api-key | oauth2-pkce
 
 Reputation is spread across platforms and scored on different scales, so problems surface late. This workflow pulls normalized reviews for a property (native rating scales preserved, never silently rescaled), summarizes the average, the recurring themes, and the most recent low ratings, and delivers a weekly reputation digest. On the AI-agent path the agent reads the reviews and writes the sentiment summary itself; on the n8n path the aggregation is plain JavaScript, so no LLM key is required — add an LLM node only if you want richer narrative.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
-- **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
-- **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
+- **Base URL:** `https://api.stayingapi.com/v1` (REST) · **MCP:** `https://mcp.stayingapi.com/mcp`
+- **Auth:** `Authorization: Bearer stay_live_…` (free sandbox: `stay_test_…`).
+- **Get a free key** (no card): https://stayingapi.com/signup · Full machine contract: https://api.stayingapi.com/openapi.json
 
 ## Steps
 
@@ -50,16 +50,16 @@ compare normalized averages; attach names via `GET /v1/listing/{platform}/{id}`.
 ### Example — REST
 
 ```bash
-curl -sS "https://api.scoutingapi.com/v1/reviews?platform=booking&listingId=abramovic2&limit=40&sort=recent" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/reviews?platform=booking&listingId=abramovic2&limit=40&sort=recent" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 ```
 
-### Example — @scoutingapi/sdk
+### Example — @stayingapi/sdk
 
 ```ts
-import { ScoutingApiClient } from '@scoutingapi/sdk';
+import { StayingApiClient } from '@stayingapi/sdk';
 
-const scout = new ScoutingApiClient({ apiKey: process.env.SCOUTINGAPI_KEY });
+const scout = new StayingApiClient({ apiKey: process.env.STAYINGAPI_KEY });
 
 const { data } = await scout.reviews({
   platform: 'booking',
@@ -75,22 +75,22 @@ console.log(data.length, 'reviews · avg', avg.toFixed(2), '/', scale);
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the StayingAPI server at **https://mcp.stayingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `get_reviews` — normalized, paginated reviews for one listing.
 
 ## Async & partial failures
 
 A live call that has to scrape returns `202` + a `jobId`; poll `GET /v1/jobs/{jobId}` (free)
-until `data.status` is `completed`, then read `data.result`. The `@scoutingapi/sdk` auto-polls.
+until `data.status` is `completed`, then read `data.result`. The `@stayingapi/sdk` auto-polls.
 On a fan-out, check `meta.partial` and `meta.platformResults[]` — report what succeeded and note
 any `meta.warnings[]`.
 
 ## Credit awareness
 
 Costs are per-endpoint and metered by result (v3). **Failed, empty and blocked calls are never
-billed**, and sandbox (`scout_test_`) calls are always free. The exact, current costs live only in
-https://scoutingapi.com/pricing and the machine-readable https://api.scoutingapi.com/openapi.json — read them there, don't assume.
+billed**, and sandbox (`stay_test_`) calls are always free. The exact, current costs live only in
+https://stayingapi.com/pricing and the machine-readable https://api.stayingapi.com/openapi.json — read them there, don't assume.
 
 ---
 
-**Get your free key → https://scoutingapi.com/signup** · Docs: https://scoutingapi.com/docs · Workflow: https://scoutingapi.com/workflows/review-intelligence-digest
+**Get your free key → https://stayingapi.com/signup** · Docs: https://stayingapi.com/docs · Workflow: https://stayingapi.com/workflows/review-intelligence-digest

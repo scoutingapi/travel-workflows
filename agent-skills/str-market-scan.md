@@ -1,9 +1,9 @@
 ---
-name: scoutingapi-str-market-scan
-description: Scan a short-term-rental market — discover listings across platforms, price the top N for your dates, and append a normalized row-per-listing dataset to a Google Sheet. Powered by the ScoutingAPI REST API / MCP server.
+name: stayingapi-str-market-scan
+description: Scan a short-term-rental market — discover listings across platforms, price the top N for your dates, and append a normalized row-per-listing dataset to a Google Sheet. Powered by the StayingAPI REST API / MCP server.
 version: 1.0.0
-homepage: https://scoutingapi.com/workflows/str-market-scan
-license: Proprietary — see https://scoutingapi.com/terms
+homepage: https://stayingapi.com/workflows/str-market-scan
+license: Proprietary — see https://stayingapi.com/terms
 tools: [search, price, listing]
 auth: bearer-api-key | oauth2-pkce
 ---
@@ -12,9 +12,9 @@ auth: bearer-api-key | oauth2-pkce
 
 Underwriting a short-term-rental market means one repeatable dataset: what is listed, on which platform, at what price, with how many beds and what rating. This workflow fans a search across platforms to discover listings in your area and dates, keeps the top N, re-prices each precisely with the dedicated price endpoint, and appends a normalized row per listing — name, platform, beds, occupancy, rating (on its native scale), nightly and total price, and URL — to a Google Sheet or CSV. Re-run it on a cadence to build a time series for comps and occupancy signals.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
-- **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
-- **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
+- **Base URL:** `https://api.stayingapi.com/v1` (REST) · **MCP:** `https://mcp.stayingapi.com/mcp`
+- **Auth:** `Authorization: Bearer stay_live_…` (free sandbox: `stay_test_…`).
+- **Get a free key** (no card): https://stayingapi.com/signup · Full machine contract: https://api.stayingapi.com/openapi.json
 
 ## Steps
 
@@ -53,20 +53,20 @@ Re-run on a schedule and append a run-date column to build a comps-and-occupancy
 
 ```bash
 # 1) Discover listings in the market
-curl -sS "https://api.scoutingapi.com/v1/search?location=Split,HR&checkIn=2026-07-13&checkOut=2026-07-20&platforms=airbnb,vrbo,booking&sort=price_asc&limit=20" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/search?location=Split,HR&checkIn=2026-07-13&checkOut=2026-07-20&platforms=airbnb,vrbo,booking&sort=price_asc&limit=20" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 
 # 2) Price one discovered listing precisely (repeat for your top N)
-curl -sS "https://api.scoutingapi.com/v1/price?platform=airbnb&listingId=42307961&checkIn=2026-07-13&checkOut=2026-07-20&adults=2&currency=EUR" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/price?platform=airbnb&listingId=42307961&checkIn=2026-07-13&checkOut=2026-07-20&adults=2&currency=EUR" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 ```
 
-### Example — @scoutingapi/sdk
+### Example — @stayingapi/sdk
 
 ```ts
-import { ScoutingApiClient } from '@scoutingapi/sdk';
+import { StayingApiClient } from '@stayingapi/sdk';
 
-const scout = new ScoutingApiClient({ apiKey: process.env.SCOUTINGAPI_KEY });
+const scout = new StayingApiClient({ apiKey: process.env.STAYINGAPI_KEY });
 const dates = { checkIn: '2026-07-13', checkOut: '2026-07-20', adults: 2, currency: 'EUR' };
 
 // 1) discover
@@ -102,16 +102,16 @@ console.table(rows);
 ## Async & partial failures
 
 A live call that has to scrape returns `202` + a `jobId`; poll `GET /v1/jobs/{jobId}` (free)
-until `data.status` is `completed`, then read `data.result`. The `@scoutingapi/sdk` auto-polls.
+until `data.status` is `completed`, then read `data.result`. The `@stayingapi/sdk` auto-polls.
 On a fan-out, check `meta.partial` and `meta.platformResults[]` — report what succeeded and note
 any `meta.warnings[]`.
 
 ## Credit awareness
 
 Costs are per-endpoint and metered by result (v3). **Failed, empty and blocked calls are never
-billed**, and sandbox (`scout_test_`) calls are always free. The exact, current costs live only in
-https://scoutingapi.com/pricing and the machine-readable https://api.scoutingapi.com/openapi.json — read them there, don't assume.
+billed**, and sandbox (`stay_test_`) calls are always free. The exact, current costs live only in
+https://stayingapi.com/pricing and the machine-readable https://api.stayingapi.com/openapi.json — read them there, don't assume.
 
 ---
 
-**Get your free key → https://scoutingapi.com/signup** · Docs: https://scoutingapi.com/docs · Workflow: https://scoutingapi.com/workflows/str-market-scan
+**Get your free key → https://stayingapi.com/signup** · Docs: https://stayingapi.com/docs · Workflow: https://stayingapi.com/workflows/str-market-scan

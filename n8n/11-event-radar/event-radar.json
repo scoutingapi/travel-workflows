@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Event / peak-date demand radar",
+  "name": "StayingAPI — Event / peak-date demand radar",
   "nodes": [
     {
       "parameters": {
@@ -88,7 +88,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/search",
+        "url": "https://api.stayingapi.com/v1/search",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -132,8 +132,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
@@ -153,7 +153,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/availability",
+        "url": "https://api.stayingapi.com/v1/availability",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -193,14 +193,14 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "url": "https://api.stayingapi.com/v1/price-compare",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -240,8 +240,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
@@ -376,6 +376,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-event-radar-v1",
+  "versionId": "stayingapi-event-radar-v1",
   "tags": []
 }

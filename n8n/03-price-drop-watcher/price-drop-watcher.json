@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Price-drop watcher",
+  "name": "StayingAPI — Price-drop watcher",
   "nodes": [
     {
       "parameters": {
@@ -88,7 +88,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/price",
+        "url": "https://api.stayingapi.com/v1/price",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -123,7 +123,7 @@
         "options": {}
       },
       "id": "price-drop-watcher-http",
-      "name": "ScoutingAPI: Request",
+      "name": "StayingAPI: Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -132,8 +132,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
@@ -197,14 +197,14 @@
       "main": [
         [
           {
-            "node": "ScoutingAPI: Request",
+            "node": "StayingAPI: Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "ScoutingAPI: Request": {
+    "StayingAPI: Request": {
       "main": [
         [
           {
@@ -235,6 +235,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-price-drop-watcher-v1",
+  "versionId": "stayingapi-price-drop-watcher-v1",
   "tags": []
 }

@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Review-intelligence digest",
+  "name": "StayingAPI — Review-intelligence digest",
   "nodes": [
     {
       "parameters": {
@@ -64,7 +64,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/reviews",
+        "url": "https://api.stayingapi.com/v1/reviews",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -91,7 +91,7 @@
         "options": {}
       },
       "id": "review-intelligence-digest-http",
-      "name": "ScoutingAPI: Request",
+      "name": "StayingAPI: Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -100,15 +100,15 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Build a reputation digest from the ScoutingAPI /v1/reviews response.\n// Input item: { data: Review[], meta: SuccessMeta }.\nconst STOP = new Set(\n  ('the a an and or but to of in on for with was were is are it we they i you this that had have ' +\n   'has very really just so at as our my me not no all had them their there here would could stay ' +\n   'stayed place property host would great good nice')\n    .split(' '),\n);\nconst out = [];\nfor (const item of $input.all()) {\n  const reviews = Array.isArray(item.json.data) ? item.json.data : [];\n  const meta = item.json.meta || {};\n  const scale = reviews[0]?.ratingScale ?? 5;\n  const rated = reviews.filter((r) => typeof r.rating === 'number');\n  const avg = rated.length\n    ? Math.round((rated.reduce((s, r) => s + r.rating, 0) / rated.length) * 100) / 100\n    : null;\n  const lowThreshold = scale * 0.6;\n  const low = rated.filter((r) => r.rating <= lowThreshold);\n  const freq = {};\n  for (const r of reviews) {\n    for (const w of String(r.text || '')\n      .toLowerCase()\n      .replace(/[^a-z\\s]/g, ' ')\n      .split(/\\s+/)) {\n      if (w.length < 4 || STOP.has(w)) continue;\n      freq[w] = (freq[w] || 0) + 1;\n    }\n  }\n  const themes = Object.entries(freq)\n    .sort((a, b) => b[1] - a[1])\n    .slice(0, 8)\n    .map(([w, c]) => `${w} (${c})`);\n  const recentComplaints = low\n    .slice(0, 5)\n    .map((r) => `• ${r.rating}/${r.ratingScale} — ${String(r.text || '').slice(0, 140)} (${r.author ?? '?'}, ${r.date ?? ''})`);\n  const report =\n    `Review digest — ${reviews.length} reviews (avg ${avg ?? 'n/a'}/${scale})\\n\\n` +\n    `Top themes: ${themes.join(', ') || 'n/a'}\\n\\n` +\n    (recentComplaints.length\n      ? `Recent low ratings (${low.length}):\\n${recentComplaints.join('\\n')}\\n\\n`\n      : `No recent low ratings.\\n\\n`) +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      count: reviews.length,\n      avgRating: avg,\n      ratingScale: scale,\n      themes,\n      lowRatingCount: low.length,\n      recentComplaints,\n      report,\n    },\n  });\n}\nreturn out;"
+        "jsCode": "// Build a reputation digest from the StayingAPI /v1/reviews response.\n// Input item: { data: Review[], meta: SuccessMeta }.\nconst STOP = new Set(\n  ('the a an and or but to of in on for with was were is are it we they i you this that had have ' +\n   'has very really just so at as our my me not no all had them their there here would could stay ' +\n   'stayed place property host would great good nice')\n    .split(' '),\n);\nconst out = [];\nfor (const item of $input.all()) {\n  const reviews = Array.isArray(item.json.data) ? item.json.data : [];\n  const meta = item.json.meta || {};\n  const scale = reviews[0]?.ratingScale ?? 5;\n  const rated = reviews.filter((r) => typeof r.rating === 'number');\n  const avg = rated.length\n    ? Math.round((rated.reduce((s, r) => s + r.rating, 0) / rated.length) * 100) / 100\n    : null;\n  const lowThreshold = scale * 0.6;\n  const low = rated.filter((r) => r.rating <= lowThreshold);\n  const freq = {};\n  for (const r of reviews) {\n    for (const w of String(r.text || '')\n      .toLowerCase()\n      .replace(/[^a-z\\s]/g, ' ')\n      .split(/\\s+/)) {\n      if (w.length < 4 || STOP.has(w)) continue;\n      freq[w] = (freq[w] || 0) + 1;\n    }\n  }\n  const themes = Object.entries(freq)\n    .sort((a, b) => b[1] - a[1])\n    .slice(0, 8)\n    .map(([w, c]) => `${w} (${c})`);\n  const recentComplaints = low\n    .slice(0, 5)\n    .map((r) => `• ${r.rating}/${r.ratingScale} — ${String(r.text || '').slice(0, 140)} (${r.author ?? '?'}, ${r.date ?? ''})`);\n  const report =\n    `Review digest — ${reviews.length} reviews (avg ${avg ?? 'n/a'}/${scale})\\n\\n` +\n    `Top themes: ${themes.join(', ') || 'n/a'}\\n\\n` +\n    (recentComplaints.length\n      ? `Recent low ratings (${low.length}):\\n${recentComplaints.join('\\n')}\\n\\n`\n      : `No recent low ratings.\\n\\n`) +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      count: reviews.length,\n      avgRating: avg,\n      ratingScale: scale,\n      themes,\n      lowRatingCount: low.length,\n      recentComplaints,\n      report,\n    },\n  });\n}\nreturn out;"
       },
       "id": "review-intelligence-digest-code",
       "name": "Build Reputation Digest",
@@ -165,14 +165,14 @@
       "main": [
         [
           {
-            "node": "ScoutingAPI: Request",
+            "node": "StayingAPI: Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "ScoutingAPI: Request": {
+    "StayingAPI: Request": {
       "main": [
         [
           {
@@ -203,6 +203,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-review-intelligence-digest-v1",
+  "versionId": "stayingapi-review-intelligence-digest-v1",
   "tags": []
 }

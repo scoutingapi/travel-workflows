@@ -1,9 +1,9 @@
 ---
-name: scoutingapi-availability-alert
-description: Watch a listing over a date window and get alerted the moment a wanted date becomes available. Powered by the ScoutingAPI REST API / MCP server.
+name: stayingapi-availability-alert
+description: Watch a listing over a date window and get alerted the moment a wanted date becomes available. Powered by the StayingAPI REST API / MCP server.
 version: 1.0.0
-homepage: https://scoutingapi.com/workflows/availability-alert
-license: Proprietary — see https://scoutingapi.com/terms
+homepage: https://stayingapi.com/workflows/availability-alert
+license: Proprietary — see https://stayingapi.com/terms
 tools: [availability, listing]
 auth: bearer-api-key | oauth2-pkce
 ---
@@ -12,9 +12,9 @@ auth: bearer-api-key | oauth2-pkce
 
 Given a known listing (or a batch) and a date window, poll day-by-day availability on a schedule and alert the instant a wanted date becomes bookable. It calls GET /v1/availability with onlyAvailable=true, flattens the returned calendar, de-dups against the previous run so you are only pinged on a real change, and posts the newly-available dates. This is the automation twin of the App’s availability-alert saved search.
 
-- **Base URL:** `https://api.scoutingapi.com/v1` (REST) · **MCP:** `https://mcp.scoutingapi.com/mcp`
-- **Auth:** `Authorization: Bearer scout_live_…` (free sandbox: `scout_test_…`).
-- **Get a free key** (no card): https://scoutingapi.com/signup · Full machine contract: https://api.scoutingapi.com/openapi.json
+- **Base URL:** `https://api.stayingapi.com/v1` (REST) · **MCP:** `https://mcp.stayingapi.com/mcp`
+- **Auth:** `Authorization: Bearer stay_live_…` (free sandbox: `stay_test_…`).
+- **Get a free key** (no card): https://stayingapi.com/signup · Full machine contract: https://api.stayingapi.com/openapi.json
 
 ## Steps
 
@@ -33,7 +33,7 @@ window — e.g. "tell me when this Airbnb opens up for my week." Reach for `avai
 1. Take `platform` + `listingId` (or a full listing `url`) and the `startDate`/`endDate` window
    (≤ 365 days, not in the past).
 2. Call `GET /v1/availability` with `onlyAvailable=true` (or the `check_availability` MCP tool, or
-   `@scoutingapi/sdk`).
+   `@stayingapi/sdk`).
 3. Flatten `data[].dates[]` and keep the entries where `available && bookable`. Compare to what you
    saw last time and report only the NEWLY-available dates so you never notify twice.
 
@@ -51,16 +51,16 @@ what you have.
 ### Example — REST
 
 ```bash
-curl -sS "https://api.scoutingapi.com/v1/availability?platform=airbnb&listingId=42307961&startDate=2026-07-13&endDate=2026-07-20&onlyAvailable=true" \
-  -H "Authorization: Bearer $SCOUTINGAPI_KEY"
+curl -sS "https://api.stayingapi.com/v1/availability?platform=airbnb&listingId=42307961&startDate=2026-07-13&endDate=2026-07-20&onlyAvailable=true" \
+  -H "Authorization: Bearer $STAYINGAPI_KEY"
 ```
 
-### Example — @scoutingapi/sdk
+### Example — @stayingapi/sdk
 
 ```ts
-import { ScoutingApiClient } from '@scoutingapi/sdk';
+import { StayingApiClient } from '@stayingapi/sdk';
 
-const scout = new ScoutingApiClient({ apiKey: process.env.SCOUTINGAPI_KEY });
+const scout = new StayingApiClient({ apiKey: process.env.STAYINGAPI_KEY });
 
 const { data } = await scout.availability({
   platform: 'airbnb',
@@ -76,22 +76,22 @@ console.log(open.length, 'bookable dates', open.join(', '));
 
 ## MCP (no key pasted into the agent)
 
-On an MCP-capable runtime, connect the ScoutingAPI server at **https://mcp.scoutingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
+On an MCP-capable runtime, connect the StayingAPI server at **https://mcp.stayingapi.com/mcp** (OAuth 2.1 + PKCE) and use:
 - `check_availability` — day-by-day availability for a known listing over a date window.
 
 ## Async & partial failures
 
 A live call that has to scrape returns `202` + a `jobId`; poll `GET /v1/jobs/{jobId}` (free)
-until `data.status` is `completed`, then read `data.result`. The `@scoutingapi/sdk` auto-polls.
+until `data.status` is `completed`, then read `data.result`. The `@stayingapi/sdk` auto-polls.
 On a fan-out, check `meta.partial` and `meta.platformResults[]` — report what succeeded and note
 any `meta.warnings[]`.
 
 ## Credit awareness
 
 Costs are per-endpoint and metered by result (v3). **Failed, empty and blocked calls are never
-billed**, and sandbox (`scout_test_`) calls are always free. The exact, current costs live only in
-https://scoutingapi.com/pricing and the machine-readable https://api.scoutingapi.com/openapi.json — read them there, don't assume.
+billed**, and sandbox (`stay_test_`) calls are always free. The exact, current costs live only in
+https://stayingapi.com/pricing and the machine-readable https://api.stayingapi.com/openapi.json — read them there, don't assume.
 
 ---
 
-**Get your free key → https://scoutingapi.com/signup** · Docs: https://scoutingapi.com/docs · Workflow: https://scoutingapi.com/workflows/availability-alert
+**Get your free key → https://stayingapi.com/signup** · Docs: https://stayingapi.com/docs · Workflow: https://stayingapi.com/workflows/availability-alert

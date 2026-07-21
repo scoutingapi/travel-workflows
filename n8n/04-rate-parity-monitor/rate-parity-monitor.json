@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Cross-OTA rate-parity monitor",
+  "name": "StayingAPI — Cross-OTA rate-parity monitor",
   "nodes": [
     {
       "parameters": {
@@ -76,7 +76,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "url": "https://api.stayingapi.com/v1/price-compare",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -111,7 +111,7 @@
         "options": {}
       },
       "id": "rate-parity-monitor-http",
-      "name": "ScoutingAPI: Request",
+      "name": "StayingAPI: Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -120,15 +120,15 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Build a rate-parity digest from the ScoutingAPI /v1/price-compare response.\n// Input item: { data: PriceCompare, meta: SuccessMeta }. Flags OTAs priced below\n// the computed median for this property + dates (a parity exception to fix).\nconst out = [];\nfor (const item of $input.all()) {\n  const data = item.json.data || {};\n  const meta = item.json.meta || {};\n  const currency = data.currency || meta.currency || 'USD';\n  const median = typeof data.median === 'number' ? data.median : null;\n  const offers = (Array.isArray(data.offers) ? [...data.offers] : []).sort(\n    (a, b) => (a.totalPrice ?? Infinity) - (b.totalPrice ?? Infinity),\n  );\n  const rows = offers.map((o) => {\n    const delta =\n      median != null && typeof o.totalPrice === 'number'\n        ? Math.round((o.totalPrice - median) * 100) / 100\n        : null;\n    return {\n      ota: o.ota,\n      totalPrice: o.totalPrice ?? null,\n      currency: o.currency || currency,\n      url: o.url ?? null,\n      deltaVsMedian: delta,\n      belowMedian: delta != null && delta < 0,\n    };\n  });\n  const exceptions = rows.filter((r) => r.belowMedian);\n  const spread =\n    offers.length >= 2\n      ? Math.round(((offers[offers.length - 1].totalPrice ?? 0) - (offers[0].totalPrice ?? 0)) * 100) / 100\n      : 0;\n  const lines = rows.map(\n    (r) =>\n      `${r.belowMedian ? '⚠︎ ' : '  '}${r.ota}: ${r.totalPrice} ${r.currency}` +\n      (r.deltaVsMedian != null ? ` (${r.deltaVsMedian >= 0 ? '+' : ''}${r.deltaVsMedian} vs median)` : '') +\n      (r.url ? ` — ${r.url}` : ''),\n  );\n  const report =\n    `Rate-parity check — ${data.property ?? 'your property'}\\n` +\n    `Stay: ${data.checkIn} → ${data.checkOut} (${currency})\\n` +\n    `Median ${median ?? 'n/a'} · spread ${spread} ${currency}\\n\\n` +\n    (exceptions.length\n      ? `${exceptions.length} OTA(s) below the median:\\n`\n      : `No OTA is below the median — parity looks healthy.\\n`) +\n    `${lines.join('\\n')}\\n\\n` +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      property: data.property ?? null,\n      checkIn: data.checkIn ?? null,\n      checkOut: data.checkOut ?? null,\n      currency,\n      median,\n      spread,\n      exceptionCount: exceptions.length,\n      exceptions,\n      offers: rows,\n      report,\n    },\n  });\n}\nreturn out;"
+        "jsCode": "// Build a rate-parity digest from the StayingAPI /v1/price-compare response.\n// Input item: { data: PriceCompare, meta: SuccessMeta }. Flags OTAs priced below\n// the computed median for this property + dates (a parity exception to fix).\nconst out = [];\nfor (const item of $input.all()) {\n  const data = item.json.data || {};\n  const meta = item.json.meta || {};\n  const currency = data.currency || meta.currency || 'USD';\n  const median = typeof data.median === 'number' ? data.median : null;\n  const offers = (Array.isArray(data.offers) ? [...data.offers] : []).sort(\n    (a, b) => (a.totalPrice ?? Infinity) - (b.totalPrice ?? Infinity),\n  );\n  const rows = offers.map((o) => {\n    const delta =\n      median != null && typeof o.totalPrice === 'number'\n        ? Math.round((o.totalPrice - median) * 100) / 100\n        : null;\n    return {\n      ota: o.ota,\n      totalPrice: o.totalPrice ?? null,\n      currency: o.currency || currency,\n      url: o.url ?? null,\n      deltaVsMedian: delta,\n      belowMedian: delta != null && delta < 0,\n    };\n  });\n  const exceptions = rows.filter((r) => r.belowMedian);\n  const spread =\n    offers.length >= 2\n      ? Math.round(((offers[offers.length - 1].totalPrice ?? 0) - (offers[0].totalPrice ?? 0)) * 100) / 100\n      : 0;\n  const lines = rows.map(\n    (r) =>\n      `${r.belowMedian ? '⚠︎ ' : '  '}${r.ota}: ${r.totalPrice} ${r.currency}` +\n      (r.deltaVsMedian != null ? ` (${r.deltaVsMedian >= 0 ? '+' : ''}${r.deltaVsMedian} vs median)` : '') +\n      (r.url ? ` — ${r.url}` : ''),\n  );\n  const report =\n    `Rate-parity check — ${data.property ?? 'your property'}\\n` +\n    `Stay: ${data.checkIn} → ${data.checkOut} (${currency})\\n` +\n    `Median ${median ?? 'n/a'} · spread ${spread} ${currency}\\n\\n` +\n    (exceptions.length\n      ? `${exceptions.length} OTA(s) below the median:\\n`\n      : `No OTA is below the median — parity looks healthy.\\n`) +\n    `${lines.join('\\n')}\\n\\n` +\n    `Credits charged: ${meta.creditsCharged ?? 0} · requestId ${meta.requestId ?? ''}`;\n  out.push({\n    json: {\n      property: data.property ?? null,\n      checkIn: data.checkIn ?? null,\n      checkOut: data.checkOut ?? null,\n      currency,\n      median,\n      spread,\n      exceptionCount: exceptions.length,\n      exceptions,\n      offers: rows,\n      report,\n    },\n  });\n}\nreturn out;"
       },
       "id": "rate-parity-monitor-code",
       "name": "Build Parity-Exception Digest",
@@ -185,14 +185,14 @@
       "main": [
         [
           {
-            "node": "ScoutingAPI: Request",
+            "node": "StayingAPI: Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "ScoutingAPI: Request": {
+    "StayingAPI: Request": {
       "main": [
         [
           {
@@ -223,6 +223,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-rate-parity-monitor-v1",
+  "versionId": "stayingapi-rate-parity-monitor-v1",
   "tags": []
 }

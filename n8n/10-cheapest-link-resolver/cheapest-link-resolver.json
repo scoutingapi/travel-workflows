@@ -1,5 +1,5 @@
 {
-  "name": "ScoutingAPI — Booking-ready cheapest-link resolver",
+  "name": "StayingAPI — Booking-ready cheapest-link resolver",
   "nodes": [
     {
       "parameters": {},
@@ -67,7 +67,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.scoutingapi.com/v1/price-compare",
+        "url": "https://api.stayingapi.com/v1/price-compare",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -102,7 +102,7 @@
         "options": {}
       },
       "id": "cheapest-link-resolver-http",
-      "name": "ScoutingAPI: Request",
+      "name": "StayingAPI: Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -111,8 +111,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_SCOUTINGAPI_CREDENTIAL_ID",
-          "name": "ScoutingAPI – Header Auth"
+          "id": "REPLACE_WITH_STAYINGAPI_CREDENTIAL_ID",
+          "name": "StayingAPI – Header Auth"
         }
       }
     },
@@ -158,14 +158,14 @@
       "main": [
         [
           {
-            "node": "ScoutingAPI: Request",
+            "node": "StayingAPI: Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "ScoutingAPI: Request": {
+    "StayingAPI: Request": {
       "main": [
         [
           {
@@ -196,6 +196,6 @@
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "versionId": "scoutingapi-cheapest-link-resolver-v1",
+  "versionId": "stayingapi-cheapest-link-resolver-v1",
   "tags": []
 }
